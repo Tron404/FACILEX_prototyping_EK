@@ -1,0 +1,8 @@
+https://crossjustice.eu/Advisory/
+https://platform.openai.com/docs/api-reference/authentication
+https://python.langchain.com/docs/get_started/quickstart
+https://huggingface.co/docs/transformers/main/model_doc/llama
+https://github.com/dair-iitd/openie6
+https://pypi.org/project/libre-chat/
+https://vemonet.github.io/libre-chat/use-pip/#use-as-a-command-line-interface
+https://github.com/rnanda17/facilex_repo/blob/main/definition_extraction_open_ai_json.ipynb
