@@ -6,3 +6,10 @@ https://github.com/dair-iitd/openie6
 https://pypi.org/project/libre-chat/
 https://vemonet.github.io/libre-chat/use-pip/#use-as-a-command-line-interface
 https://github.com/rnanda17/facilex_repo/blob/main/definition_extraction_open_ai_json.ipynb
+
+https://github.com/coastalcph/lex-glue
+https://www.google.com/search?q=legal+language+models&client=firefox-b-d&sca_esv=583306587&ei=mEpXZcPdFuSE9u8P-NyIuAg&ved=0ahUKEwjDie6v88qCAxVkgv0HHXguAocQ4dUDCA8&uact=5&oq=legal+language+models&gs_lp=Egxnd3Mtd2l6LXNlcnAiFWxlZ2FsIGxhbmd1YWdlIG1vZGVsczIFEAAYgAQyBhAAGBYYHjIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjILEAAYgAQYigUYhgMyCxAAGIAEGIoFGIYDMgsQABiABBiKBRiGAzILEAAYgAQYigUYhgMyCxAAGIAEGIoFGIYDSIUdUIMCWI4ccAF4AZABAJgBSKABiQaqAQIxMrgBA8gBAPgBAcICChAAGEcY1gQYsAPCAg0QABhHGNYEGMkDGLADwgIOEAAYgAQYigUYkgMYsAPCAg0QABiABBiKBRiwAxhDwgIKEAAYgAQYigUYQ8ICDhAuGK8BGMcBGIAEGI4FwgIFEC4YgATCAggQABgWGB4YD-IDBBgAIEGIBgGQBgo&sclient=gws-wiz-serp
+https://www.google.com/search?client=firefox-b-d&q=legalbert
+https://pypi.org/project/echr-extractor/
+https://github.com/maastrichtlawtech
+https://www.echr.coe.int/hudoc-database
