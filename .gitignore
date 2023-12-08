@@ -1,3 +1,9 @@
 keys.*
 *.sh
 Models/
+case_law/data
+case_law/DataPaper
+case_law/CJEU/*
+case_law/model/*
+*.png
+*.zip
