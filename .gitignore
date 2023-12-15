@@ -1,9 +1,13 @@
 keys.*
 *.sh
 Models/
+case_law/*
 case_law/data
 case_law/DataPaper
 case_law/CJEU/*
 case_law/model/*
+case_law_facilex_data/models/
+case_law_facilex_data/caselaw
+case_law_facilex_data/finetuning_experiment
 *.png
 *.zip
