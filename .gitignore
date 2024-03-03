@@ -1,5 +1,4 @@
 models/
-other/
 data/
 *.json
 *.sh
