@@ -30,6 +30,11 @@ def check_celex_status(query_celex: str|list|None, retrieved_case_celex: str|lis
     Return: boolean value based on whether `query_celex` is `None` or whether there are any shared CELEX IDs between the query and candidate case 
     """
 
+    if type(query_celex) == str:
+        query_celex = [query_celex]
+    if type(retrieved_case_celex) == str or retrieved_case_celex == None:
+        retrieved_case_celex =  [retrieved_case_celex]
+
     return (query_celex == None) or (len(set(query_celex) & set(retrieved_case_celex)) > 0)
 
 def cosine_similarity_search(query_embedding: np.ndarray, search_space_embedding: np.ndarray, query_celex: str|list|None, search_space: list, top_k: int = 5) -> list:
@@ -44,7 +49,9 @@ def cosine_similarity_search(query_embedding: np.ndarray, search_space_embedding
     * `search_space`: list of all cases (minus the query) through which to search
     * `top_k`: number of similar cases to be retrieved\n
     ---
-    Return: most similar cases (that are not the query case), sorted from most to least similar
+    Return: 
+    * most similar cases (that are not the query case), sorted from most to least similar
+    * variable indicating whether search had to revert to original top 5 most similar cases when checking CELEX IDs
     """
 
     cosine_scores: list = cosine_similarity(query_embedding, search_space_embedding)
@@ -55,9 +62,15 @@ def cosine_similarity_search(query_embedding: np.ndarray, search_space_embedding
     best_matches: list = sorted(search_space, key = lambda x: x["similarity_score"], reverse = True)[:top_k]
 
     # only show the user cases which do have the same CELEX number; if there are no CELEX IDs in the query case, then simply return the most semantically similar cases
-    best_matches = [retrieved_case for retrieved_case in best_matches if check_celex_status(query_celex, retrieved_case["euProvisions"])]
+    similar_cases = [retrieved_case for retrieved_case in best_matches if check_celex_status(query_celex, retrieved_case["euProvisions"])]
     
-    return best_matches
+    # only triggers when no CELEX matches are found in the original top 5
+    fail_safe = False
+    if len(similar_cases) < 1:
+        similar_cases = best_matches
+        fail_safe = True
+    
+    return similar_cases, fail_safe
 
 def read_json_data(json_case_query_path: str, json_search_embedding_path: str, json_search_text_path: str) -> tuple[dict, list, list]:
     """
@@ -74,9 +87,17 @@ def read_json_data(json_case_query_path: str, json_search_embedding_path: str, j
     * list of all cases without the query case
     """
 
-    query_data: dict = json.load(open(json_case_query_path, "r"))
-    search_embeddings_data: list = json.load(open(json_search_embedding_path, "r"))
-    search_text_data: list = json.load(open(json_search_text_path, "r"))
+    query_file = open(json_case_query_path, "r")
+    search_embedding_file = open(json_search_embedding_path, "r")
+    search_text_file = open(json_search_text_path, "r")
+
+    query_data: dict = json.load(query_file)
+    search_embeddings_data: list = json.load(search_embedding_file)
+    search_text_data: list = json.load(search_text_file)
+
+    query_file.close()
+    search_embedding_file.close()
+    search_text_file.close()
 
     # remove query case from the search corpus
     search_text_data = [item for item in search_text_data if item["uniqueId"] != query_data["uniqueId"]]
@@ -100,11 +121,31 @@ def get_embeddings_from_json(search_embeddings_data: list, query_data_uid: str) 
 
     return query_embedding, search_embedding
 
-if __name__ == "__main__":
-    query_data, search_embeddings_data, search_text_data = read_json_data(json_case_query_path="input_query.json", json_search_embedding_path="corpus_embedded.json", json_search_text_path="corpus.json")
-
+def semantic_search(query_path: str, return_fail_safe = False) -> str:
+    """
+    Perform semantic search on a given query and return the top 5 (if available) most similar cases
+    ---
+    Input:
+    * `query_path`: path to the user's query
+    * `return_fail_safe`: whether to return the test variable that checks whether the system reverted to original top 5 most similar cases when checking CELEX IDs
+    ---
+    Output:
+    * json of the most similar cases
+    * optional: boolean variable of search failure
+    """
+    query_data, search_embeddings_data, search_text_data = read_json_data(json_case_query_path=query_path, json_search_embedding_path="corpus_embedded.json", json_search_text_path="corpus.json")
     query_embedding, search_embedding = get_embeddings_from_json(search_embeddings_data, query_data["uniqueId"])
+    similar_cases, fail_safe = cosine_similarity_search(query_embedding, search_embedding, query_data["euProvisions"], search_text_data, top_k=5)
 
-    similar_cases: list = cosine_similarity_search(query_embedding, search_embedding, query_data["euProvisions"], search_text_data, top_k=5)
+    if return_fail_safe:
+        return_items = json.dumps(similar_cases, indent = 2), fail_safe
+    else:
+        return_items = json.dumps(similar_cases, indent = 2)
 
-    json.dump(similar_cases, open("example_output.json", "w"), indent = 2)
+    return return_items
+
+if __name__ == "__main__":
+    similar_cases: str = semantic_search("input_query.json")
+
+    with open("example_output.json", "w") as file:
+        file.write(similar_cases)
