@@ -12,13 +12,13 @@ from functools import partial
 def read_data():
     models = ["bert_uncased", "multiqa_mpnet_dot", "mpnet", "tfidf", "fasttext_facilex"]
     df_all = []
-    path = "../data/caselaw_emb"
+    path = "./data/caselaw_emb"
 
     # load in the individual jurisdictions and combine them into one dataframe
     for jurisdiction in os.listdir(path):
         aux = pd.read_pickle(f"{path}/{jurisdiction}/emb_{models[0]}.pickle")
         for model in models:
-            read_df = pd.read_pickle(f"../data/caselaw_emb/{jurisdiction}/emb_{model}.pickle")
+            read_df = pd.read_pickle(f"./data/caselaw_emb/{jurisdiction}/emb_{model}.pickle")
             if type(read_df) == pd.DataFrame:
                 aux[read_df.columns[-1]] = read_df[read_df.columns[-1]]
             else:
