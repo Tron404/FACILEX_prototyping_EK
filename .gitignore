@@ -1,5 +1,6 @@
 models/
 data/
+!testing_similarity/data/
 *.json
 *.sh
 *.png
