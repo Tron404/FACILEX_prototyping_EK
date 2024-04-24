@@ -8,5 +8,6 @@ data/
 *.csv
 *.txt
 *.yml
-*.pickle
+transposition_retrieval/
+caselaw_summary/*.pickle
 env_utils.py
