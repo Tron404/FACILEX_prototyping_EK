@@ -56,8 +56,7 @@ def cosine_similarity_search(query_embedding: np.ndarray, search_space_embedding
 
     cosine_scores: list = cosine_similarity(query_embedding, search_space_embedding)
 
-    # FIXME function to perform the linking
-    # include the similarity score inside each case json
+    # include the similarity score inside each case json and create a link between a case and its score
     search_space: list = [{**data_entry, "similarity_score": score} for data_entry, score in zip(search_space, cosine_scores)]
     # sort the similarity scores from most to least similar and select the top 5 most similar cases
     best_matches: list = sorted(search_space, key = lambda x: x["similarity_score"], reverse = True)[:top_k]
@@ -88,7 +87,6 @@ def read_json_data(json_case_query_path: str, json_search_embedding_path: str, j
     * list of all cases without the query case
     """
 
-    # FIXME create function for reuseability
     query_file = open(json_case_query_path, "r")
     search_embedding_file = open(json_search_embedding_path, "r")
     search_text_file = open(json_search_text_path, "r")
@@ -102,7 +100,6 @@ def read_json_data(json_case_query_path: str, json_search_embedding_path: str, j
     search_text_file.close()
 
     # remove query case from the search corpus
-    # FIXME function to perform the filter
     search_text_data = [item for item in search_text_data if item["uniqueId"] != query_data["uniqueId"]]
 
     return query_data, search_embeddings_data, search_text_data
@@ -119,7 +116,7 @@ def get_embeddings_from_json(search_embeddings_data: list, query_data_uid: str) 
     * embedding of the query case
     * np array of all cases' embeddings, without the query case
     """
-    # FIXME function to perform the filter
+    # get query and search embedding, while ignoring the query case from the search corpus
     query_embedding: np.ndarray = np.asarray([search_space_item["embedding"] for search_space_item in search_embeddings_data if search_space_item["uniqueId"] == query_data_uid])
     search_embedding: np.ndarray = np.asarray([np.asarray(search_space_item["embedding"]) for search_space_item in search_embeddings_data if search_space_item["uniqueId"] != query_data_uid])
 
@@ -149,7 +146,7 @@ def semantic_search(query_path: str, return_fail_safe = False) -> str:
     return return_items
 
 if __name__ == "__main__":
-    similar_cases: str = semantic_search("input_query.json")
+    similar_cases: str = semantic_search("input_query.json", return_fail_safe=False)
 
     with open("example_output.json", "w") as file:
         file.write(similar_cases)
