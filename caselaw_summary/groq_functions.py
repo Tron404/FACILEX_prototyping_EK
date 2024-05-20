@@ -186,6 +186,9 @@ class llmResponse:
 
             extracted_summaries = self._from_extracted(path, test_size=self.test_size, current_length=input_model_params[self.user_model]["max_tokens"]+self.user_prompt_length+self.length_system_prompt+SAFETY_MARGIN)
             errors = 0
+
+            print(extracted_summaries[137])
+            return
             iterator = tqdm(extracted_summaries, desc=f"Model={self.model}, Prompt={self.prompt_type}, Selection={extract_sum_type}, Errors={errors}")
             for idx, summ in enumerate(iterator):
                 if f"{idx}.json" in os.listdir(f"answers/{self.model}/{self.prompt_type}/{extract_sum_type}"):
