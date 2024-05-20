@@ -47,6 +47,7 @@ class input_test(unittest.TestCase):
     # contains same CELEX, if query has CELEX - check if equal
     def _test_input_1celex(self, result, expected_attribute_from_querry):
         self.assertGreater(len(result), 0, f"There are no results from the system! - {self.input_file}")
+        self.assertLess(len(result), 6, f"There are more than 5 results from the system! - {self.input_file}")
         for result_case in result:
             self.assertEqual(expected_attribute_from_querry, result_case["euProvisions"], f"CELEX do not match - {self.input_file}")
 
