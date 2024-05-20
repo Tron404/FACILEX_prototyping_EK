@@ -10,3 +10,4 @@ data/
 *.yml
 *.pickle
 env_utils.py
+caselaw_retrieval/
