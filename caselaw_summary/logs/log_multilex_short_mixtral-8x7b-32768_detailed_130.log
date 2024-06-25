@@ -1,0 +1,8 @@
+21:59:41 WARNING Number of documents and/or sentences changed due to being too big for file 75: documents=10/10 - sentences=5/10 (starting from 0) - tokens=24915
+21:59:41 WARNING Number of documents and/or sentences changed due to being too big for file 95: documents=10/10 - sentences=9/10 (starting from 0) - tokens=28385
+21:59:42 WARNING Number of documents and/or sentences changed due to being too big for file 166: documents=10/10 - sentences=9/10 (starting from 0) - tokens=32143
+21:59:45 WARNING Number of documents and/or sentences changed due to being too big for file 269: documents=9/9 - sentences=6/10 (starting from 0) - tokens=30080
+21:59:46 WARNING Number of documents and/or sentences changed due to being too big for file 346: documents=10/10 - sentences=9/10 (starting from 0) - tokens=31293
+21:59:57 WARNING Number of documents and/or sentences changed due to being too big for file 269: documents=9/9 - sentences=6/10 (starting from 0) - tokens=30080
+21:59:59 WARNING Number of documents and/or sentences changed due to being too big for file 346: documents=10/10 - sentences=6/10 (starting from 0) - tokens=30120
+22:00:02 WARNING Number of documents and/or sentences changed due to being too big for file 457: documents=10/10 - sentences=2/10 (starting from 0) - tokens=24270

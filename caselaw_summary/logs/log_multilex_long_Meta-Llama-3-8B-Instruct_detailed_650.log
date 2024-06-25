@@ -1,0 +1,13 @@
+17:15:21 WARNING Number of documents and/or sentences changed due to being too big for file 2: documents=10/10 - sentences=7/10 (starting from 0) - tokens=7497
+17:15:21 WARNING Number of documents and/or sentences changed due to being too big for file 4: documents=10/10 - sentences=6/10 (starting from 0) - tokens=7346
+17:15:22 WARNING Number of documents and/or sentences changed due to being too big for file 5: documents=10/10 - sentences=7/10 (starting from 0) - tokens=8052
+17:15:22 WARNING Number of documents and/or sentences changed due to being too big for file 14: documents=10/10 - sentences=7/10 (starting from 0) - tokens=7618
+17:15:22 WARNING Number of documents and/or sentences changed due to being too big for file 18: documents=10/10 - sentences=5/10 (starting from 0) - tokens=8057
+17:15:23 WARNING Number of documents and/or sentences changed due to being too big for file 20: documents=10/10 - sentences=9/10 (starting from 0) - tokens=8166
+17:15:23 WARNING Number of documents and/or sentences changed due to being too big for file 23: documents=8/8 - sentences=8/10 (starting from 0) - tokens=7567
+17:15:23 WARNING Number of documents and/or sentences changed due to being too big for file 24: documents=10/10 - sentences=7/10 (starting from 0) - tokens=7778
+17:15:23 WARNING Number of documents and/or sentences changed due to being too big for file 26: documents=9/9 - sentences=3/10 (starting from 0) - tokens=6382
+17:15:24 WARNING Number of documents and/or sentences changed due to being too big for file 28: documents=6/6 - sentences=6/10 (starting from 0) - tokens=8084
+17:15:24 WARNING Number of documents and/or sentences changed due to being too big for file 30: documents=6/6 - sentences=9/10 (starting from 0) - tokens=8187
+17:15:24 WARNING Number of documents and/or sentences changed due to being too big for file 33: documents=10/10 - sentences=9/10 (starting from 0) - tokens=7903
+17:15:25 WARNING Number of documents and/or sentences changed due to being too big for file 34: documents=9/9 - sentences=6/10 (starting from 0) - tokens=7827

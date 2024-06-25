@@ -1,0 +1,2 @@
+17:15:23 WARNING Number of documents and/or sentences changed due to being too big for file 37: documents=10/10 - sentences=8/10 (starting from 0) - tokens=32472
+17:15:25 WARNING Number of documents and/or sentences changed due to being too big for file 101: documents=10/10 - sentences=8/10 (starting from 0) - tokens=30696

@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[4]:
+
 import sys
 import pickle
 from datasets import load_dataset
@@ -14,39 +19,18 @@ d_map = {
     "multilex_tiny": "summary/tiny",
     "multilex_short": "summary/short",
     "multilex_long": "summary/long",
-    "eurlexsum": "reference",
-    "eurlexsum_test": "reference",
-    "eurlexsum_validation": "reference"
+    "eurlexsum": "reference"
 }
 
-if f"results_{dataset_name}.pickle" in os.listdir():
-    exit(1)
-
-split = None
 if "multilex" in dataset_name:
     dataset = load_dataset("allenai/multi_lexsum", name="v20230518")
     dataset = dataset["test"].filter(lambda x: x[d_map[dataset_name]] != None)[d_map[dataset_name]]
 else:
     dataset = load_dataset("dennlinger/eur-lex-sum", "english")
-    match dataset_name:
-        case "eurlexsum_test":
-            split = slice(len(dataset["train"]["summary"]), len(dataset["train"]["summary"] + dataset["test"]["summary"]))
-            dataset = dataset["test"]["summary"]
-        case "eurlexsum_validation":
-            split = slice(len(dataset["train"]["summary"] + dataset["test"]["summary"]), len(dataset["train"]["summary"] + dataset["test"]["summary"] + dataset["validation"]["summary"]))
-            dataset = dataset["validation"]["summary"]
-        case "eurlexsum":
-            split = slice(0,len(dataset["train"]["summary"] + dataset["test"]["summary"] + dataset["validation"]["summary"]))
-            dataset = dataset["train"]["summary"] + dataset["test"]["summary"] + dataset["validation"]["summary"]
-
-    print(split, split.stop - split.start)    
-    # dataset = dataset["train"]["summary"] + dataset["test"]["summary"] + dataset["validation"]["summary"]
+    dataset = dataset["train"]["summary"] + dataset["test"]["summary"] + dataset["validation"]["summary"]
 
 print(f"Number of test cases={len(dataset)}")
-import evaluate
 
-rouge_scoring = evaluate.load("rouge")
-bertscore = evaluate.load("bertscore")
 
 import os
 import json
@@ -60,59 +44,34 @@ def load_predicted_data(path):
 
     return predicted
 
+
+import os
 from tqdm import tqdm
 
+if f"results_{dataset_name}_moverscore.pickle" in os.listdir():
+    exit(1)
 
-def compute_mover_score(references, predictions, orig_ref, orig_pred):
-    idf_dict_pred = get_idf_dict(orig_pred)
-    idf_dict_ref = get_idf_dict(orig_ref)
+def compute_mover_score(references, predictions):
+    idf_dict_pred = get_idf_dict(predictions)
+    idf_dict_ref = get_idf_dict(references)
 
     scores = word_mover_score(references, predictions, idf_dict_ref, idf_dict_pred, n_gram=1, remove_subwords=True, batch_size=1)
     torch.cuda.empty_cache()
 
-    return scores
+    return np.mean(scores)
     
 def evaluation(path_data, results, model, prompt_type, selection_type, limit):
-    if "eurlexsum" in dataset_name:
-        predicted = load_predicted_data(path_data)[split][:limit]
-    else:
-        predicted = load_predicted_data(path_data)[:limit]
-
-    print(len(predicted))
-    r_scores = rouge_scoring.compute(predictions=predicted, references=dataset[:len(predicted)], use_stemmer = True)
-    # mover_score = compute_mover_score(references=dataset, predictions=predicted, orig_ref=dataset, orig_pred=predicted)
-    # chosen deberta lange due to https://github.com/Tiiiger/bert_score/blob/master/README.md and paper
-    # bert_scores = bertscore.compute(predictio ns=predicted, references=dataset[:len(predicted)], model_type="microsoft/deberta-xlarge-mnli", batch_size = 1, verbose=True)
-    # for some reason the data is all loaded onto the GPU so it doesn't fit anymore
-    bs = 0
-    mover = 0
-    batch_size = 1
-    for pred_idx in tqdm(range(0,len(predicted),batch_size)):
-        # in bertscore.py, in evaluate metric bert (from evaluate huggingface), added del of scorer model to reduce VRAM usage
-        bs_aux = bertscore.compute(predictions=predicted[pred_idx:pred_idx+batch_size], references=dataset[pred_idx:pred_idx+batch_size], model_type="microsoft/deberta-xlarge-mnli", batch_size = 1)
-        mover_aux = compute_mover_score(references=dataset[pred_idx:pred_idx+batch_size], predictions=predicted[pred_idx:pred_idx+batch_size], orig_ref = dataset, orig_pred=predicted)
-        mover += sum(mover_aux)
-        bs += sum(bs_aux["f1"])
-
-    mover_score = mover/len(predicted)
-    r_scores = {metric: round(np.mean(val), 3) for metric, val in r_scores.items()}
-    bert_scores = {"f1": bs/len(predicted)}
-
-    # mover_score = np.mean(mover_score)
-    # bert_scores = {"f1": np.mean(bert_scores["f1"])}
-
-    # bert_scores = {metric: round(np.mean(val), 3) for metric, val in bert_scores.items() if metric != "hashcode"}
-
-    results["model"] += [model] * 5
-    results["selection_type"] += [selection_type] * 5
-    results["prompt_type"] += [prompt_type] * 5
-    results["score_value"] += [r_scores["rouge1"], r_scores["rouge2"], r_scores["rougeL"], bert_scores["f1"], mover_score]
-    results["score_type"] += ["rouge1", "rouge2", "rougeL", "bert_score", "mover_score"]
+    predicted = load_predicted_data(path_data)[:limit]
+    mover_score = compute_mover_score(references=dataset[:len(predicted)], predictions=predicted)
+    
+    results["model"] += [model] * 1
+    results["selection_type"] += [selection_type] * 1
+    results["prompt_type"] += [prompt_type] * 1
+    results["score_value"] += [mover_score]
+    results["score_type"] += ["mover_score"]
 
 results = {"model": [], "selection_type": [], "prompt_type": [], "score_value": [], "score_type": []}
-if "eurlexsum" in dataset_name:
-    dataset_name_aux = dataset_name.split("_")[0]
-    path_dir = f"answers/{dataset_name_aux}"
+path_dir = f"answers/{dataset_name}"
 for model in tqdm(os.listdir(f"{path_dir}/")):
     for prompt_type in os.listdir(f"{path_dir}/{model}/"):
         for selection_type in os.listdir(f"{path_dir}/{model}/{prompt_type}/"):
@@ -123,9 +82,9 @@ for model in tqdm(os.listdir(f"{path_dir}/")):
 import pickle
 
 
-pickle.dump(results, open(f"results_{dataset_name}.pickle", "wb"))
+pickle.dump(results, open(f"results_{dataset_name}_moverscore.pickle", "wb"))
 
-results = pickle.load(open(f"results_{dataset_name}.pickle", "rb"))
+results = pickle.load(open(f"results_{dataset_name}_moverscore.pickle", "rb"))
 
 
 

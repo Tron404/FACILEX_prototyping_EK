@@ -1,0 +1,5 @@
+18:39:35 WARNING Number of documents and/or sentences changed due to being too big for file 172: documents=1/1 - sentences=5/10 (starting from 0) - tokens=31712
+18:39:38 WARNING Number of documents and/or sentences changed due to being too big for file 516: documents=1/1 - sentences=6/10 (starting from 0) - tokens=31890
+18:39:38 WARNING Number of documents and/or sentences changed due to being too big for file 517: documents=1/1 - sentences=8/10 (starting from 0) - tokens=31775
+18:39:40 WARNING Number of documents and/or sentences changed due to being too big for file 809: documents=1/1 - sentences=7/10 (starting from 0) - tokens=29920
+18:39:41 WARNING Number of documents and/or sentences changed due to being too big for file 859: documents=1/1 - sentences=4/10 (starting from 0) - tokens=26686
