@@ -14,6 +14,7 @@ from tqdm import tqdm
 warnings.filterwarnings("ignore")
 np.random.seed(42)
 
+# load data
 multi_lexsum = load_dataset("allenai/multi_lexsum", name="v20230518")
 modified_dataset = multi_lexsum["test"].filter(lambda x: x["summary/short"] != None)
 
@@ -22,11 +23,14 @@ model_summ = Summarizer("distilbert-base-uncased", hidden_concat = True, hidden 
 
 nlp = spacy.load("en_core_web_sm")
 nlp.add_pipe("textrank", last = True)
-nlp.max_length = 3_000_000
+nlp.max_length = 3_000_000 # needed for long documents, otherwise spaCy cannot handle that many tokens
 
+# get list of most salient sentences by passing a full length and untokenized document
 def get_extractive_summary_bert(doc, limit_sentences = 10):
     return model_summ(doc, use_first = False, return_as_list = True, num_sentences = limit_sentences) 
 
+# get list of most salient sentences by passing a full length and untokenized document
+# based on co occurence of words and keywords, not tfidf/modern embeddings
 def get_extractive_summary_textrank(doc, limit_sentences = 10):
     parsed_doc = nlp(doc)
     limit_phrases = None
@@ -36,6 +40,7 @@ def get_extractive_summary_textrank(doc, limit_sentences = 10):
     phrase_id = 0
     unit_vector = []
     # get original text according to rank
+    # get rank of all phrases
     for p in parsed_doc._.phrases:
         unit_vector.append(p.rank)
 
@@ -108,6 +113,9 @@ def select_docs_first5last5(docket, limit_docket_docs = 10):
 
     return subset_docs
 
+# given a dataset (any type should work), an output directory, an extractive measure, and a document selection method
+# create json files for each sample in the dataset
+# this system can handle both multi document and single document texts
 def extractive_system(data, path, extractive_sum_func, selection_func):
     os.makedirs(path, exist_ok=True)
 
@@ -130,6 +138,7 @@ def load_eurlex_data():
     return data["train"]["reference"] + data["test"]["reference"] + data["validation"]["reference"]
 
 if __name__ == "__main__":
+    # use command line arguments to get input for system
     data_name, extractive_sum, selection = sys.argv[1:]
 
     extractive_sum_map = {
@@ -147,7 +156,7 @@ if __name__ == "__main__":
         "eurlexsum": load_eurlex_data()
     }
 
-    path = f"extracted_sums/{data_name}_100/extracted_sums_json_{selection}_{extractive_sum}"
+    path = f"extracted_sums/{data_name}/extracted_sums_json_{selection}_{extractive_sum}"
     extractive_sum_func = extractive_sum_map[extractive_sum]
     selection_func = selection_map[selection]
     data = data_map[data_name]
