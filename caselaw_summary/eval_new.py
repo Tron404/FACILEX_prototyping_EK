@@ -1,21 +1,15 @@
 import sys
-import os
-cuda_id = sys.argv[2]
-# os.environ["CUDA_VISIBLE_DEVICES"]=cuda_id
 import pickle
 from datasets import load_dataset
 import numpy as np
+import os
 import torch
-dataset_name = sys.argv[1]
 
 # set env before importing to use custom model
-model_path = "../models/"
-device = torch.device(f"cuda:{cuda_id}")
+os.environ["MOVERSCORE_MODEL"] = "allenai/longformer-base-4096"
+from moverscore_v2 import get_idf_dict, word_mover_score
 
-# os.environ["MOVERSCORE_MODEL"] = model_path + "longformer-base-4096"
-# from moverscore_v2 import get_idf_dict, word_mover_score
-print(device)
-
+dataset_name = sys.argv[-1]
 d_map = {
     "multilex_tiny": "summary/tiny",
     "multilex_short": "summary/short",
@@ -25,16 +19,15 @@ d_map = {
     "eurlexsum_validation": "reference"
 }
 
-if f"results_{dataset_name}_cod_new.pickle" in os.listdir():
+if f"results_{dataset_name}_longcontext.pickle" in os.listdir():
     exit(1)
 
-print("Getting data")
 split = None
 if "multilex" in dataset_name:
     dataset = load_dataset("allenai/multi_lexsum", name="v20230518")
     dataset = dataset["test"].filter(lambda x: x[d_map[dataset_name]] != None)[d_map[dataset_name]]
 else:
-    dataset = load_dataset("dennlinger/eur-lex-sum", "english", trust_remote_code=True)
+    dataset = load_dataset("dennlinger/eur-lex-sum", "english")
     match dataset_name:
         case "eurlexsum_test":
             split = slice(len(dataset["train"]["summary"]), len(dataset["train"]["summary"] + dataset["test"]["summary"]))
@@ -53,7 +46,7 @@ print(f"Number of test cases={len(dataset)}")
 import evaluate
 
 rouge_scoring = evaluate.load("rouge")
-bertscore = evaluate.load("bertscore", device=device)
+bertscore = evaluate.load("bertscore")
 
 import os
 import json
@@ -70,16 +63,12 @@ def load_predicted_data(path):
 from tqdm import tqdm
 
 
-def compute_mover_score(predictions, references, orig_ref, orig_pred):
+def compute_mover_score(references, predictions, orig_ref, orig_pred):
     idf_dict_pred = get_idf_dict(orig_pred)
     idf_dict_ref = get_idf_dict(orig_ref)
 
-    print("Computed idf dictionaries for mover score")
-
-    scores = word_mover_score(references, predictions, idf_dict_ref, idf_dict_pred, n_gram=1, remove_subwords=True, batch_size=3, device=device)
+    scores = word_mover_score(references, predictions, idf_dict_ref, idf_dict_pred, n_gram=1, remove_subwords=True, batch_size=1)
     torch.cuda.empty_cache()
-
-    print("Mover score done")
 
     return scores
     
@@ -91,27 +80,28 @@ def evaluation(path_data, results, model, prompt_type, selection_type, limit):
 
     print(len(predicted))
     r_scores = rouge_scoring.compute(predictions=predicted, references=dataset[:len(predicted)], use_stemmer = True)
-    bert_scores = bertscore.compute(predictions=predicted, references=dataset[:len(predicted)], model_type="microsoft/deberta-xlarge-mnli", batch_size = 4, verbose=True, device=device)
-    # mover_score = compute_mover_score(predictions=predicted, references=dataset[:len(predicted)], orig_ref=dataset, orig_pred=predicted)
+    # mover_score = compute_mover_score(references=dataset, predictions=predicted, orig_ref=dataset, orig_pred=predicted)
+    # chosen deberta lange due to https://github.com/Tiiiger/bert_score/blob/master/README.md and paper
+    # bert_scores = bertscore.compute(predictio ns=predicted, references=dataset[:len(predicted)], model_type="microsoft/deberta-xlarge-mnli", batch_size = 1, verbose=True)
+    # for some reason the data is all loaded onto the GPU so it doesn't fit anymore
+    bs = 0
+    mover = 0
+    batch_size = 1
+    for pred_idx in tqdm(range(0,len(predicted),batch_size)):
+        # in bertscore.py, in evaluate metric bert (from evaluate huggingface), added del of scorer model to reduce VRAM usage
+        bs_aux = bertscore.compute(predictions=predicted[pred_idx:pred_idx+batch_size], references=dataset[pred_idx:pred_idx+batch_size], model_type="microsoft/deberta-xlarge-mnli", batch_size = 1)
+        # mover_aux = compute_mover_score(references=dataset[pred_idx:pred_idx+batch_size], predictions=predicted[pred_idx:pred_idx+batch_size], orig_ref = dataset, orig_pred=predicted)
+        # mover += sum(mover_aux)
+        bs += sum(bs_aux["f1"])
+
+    mover_score = mover/len(predicted)
+    r_scores = {metric: round(np.mean(val), 3) for metric, val in r_scores.items()}
+    bert_scores = {"f1": bs/len(predicted)}
 
     # mover_score = np.mean(mover_score)
-    mover_score = 0
-    bert_scores = {"f1": np.mean(bert_scores["f1"])}
-    r_scores = {metric: round(np.mean(val), 3) for metric, val in r_scores.items()}
+    # bert_scores = {"f1": np.mean(bert_scores["f1"])}
 
-    # mover_score = mover/len(predicted)
-    # bert_scores = {"f1": bs/len(predicted)}
-    # chosen deberta lange due to https://github.com/Tiiiger/bert_score/blob/master/README.md and paper
-    # for some reason the data is all loaded onto the GPU so it doesn't fit anymore
-    # bs = 0
-    # mover = 0
-    # batch_size = 50
-    # for pred_idx in tqdm(range(0,len(predicted),batch_size)):
-    #     # in bertscore.py, in evaluate metric bert (from evaluate huggingface), added del of scorer model to reduce VRAM usage
-    #     bs_aux = bertscore.compute(predictions=predicted[pred_idx:pred_idx+batch_size], references=dataset[pred_idx:pred_idx+batch_size], model_type="microsoft/deberta-xlarge-mnli", batch_size = 1)
-    #     mover_aux = compute_mover_score(references=dataset[pred_idx:pred_idx+batch_size], predictions=predicted[pred_idx:pred_idx+batch_size], orig_ref = dataset, orig_pred=predicted)
-    #     mover += sum(mover_aux)
-    #     bs += sum(bs_aux["f1"])
+    # bert_scores = {metric: round(np.mean(val), 3) for metric, val in bert_scores.items() if metric != "hashcode"}
 
     results["model"] += [model] * 5
     results["selection_type"] += [selection_type] * 5
@@ -120,29 +110,27 @@ def evaluation(path_data, results, model, prompt_type, selection_type, limit):
     results["score_type"] += ["rouge1", "rouge2", "rougeL", "bert_score", "mover_score"]
 
 results = {"model": [], "selection_type": [], "prompt_type": [], "score_value": [], "score_type": []}
-if "eurlexsum" in dataset_name:
-    dataset_name_aux = dataset_name.split("_")[0]
-    path_dir = f"answers/{dataset_name_aux}"
-else:
-    path_dir = f"answers/{dataset_name}"
-iter = 0
-for model in tqdm(os.listdir(f"{path_dir}/")):
-    for prompt_type in os.listdir(f"{path_dir}/{model}/"):
-        for selection_type in os.listdir(f"{path_dir}/{model}/{prompt_type}/"):
-            path_data = f"{path_dir}/{model}/{prompt_type}/{selection_type}/"
-            evaluation(path_data, results, model, prompt_type, selection_type, len(dataset))
-            iter += 1
-            print(f"Iteration {iter}/{4*3*4}")
+# if "eurlexsum" in dataset_name:
+#     dataset_name_aux = dataset_name.split("_")[0]
+#     path_dir = f"answers/{dataset_name_aux}"
+
+path_dir = "answers_longcontext"
+for model_data in tqdm(os.listdir(f"{path_dir}/")):
+    if dataset_name not in model_data:
+        continue
+    for prompt_type in os.listdir(f"{path_dir}/{model_data}/"):
+        path_data = f"{path_dir}/{model_data}/{prompt_type}/"
+        evaluation(path_data, results, model_data, prompt_type, None, len(dataset))
 
 
 import pickle
 
 
-pickle.dump(results, open(f"results_{dataset_name}_cod_new.pickle", "wb"))
+pickle.dump(results, open(f"results_{dataset_name}_longcontext.pickle", "wb"))
 
-results = pickle.load(open(f"results_{dataset_name}_cod_new.pickle", "rb"))
+results = pickle.load(open(f"results_{dataset_name}_longcontext.pickle", "rb"))
 
-exit(1)
+
 
 import pandas as pd
 
