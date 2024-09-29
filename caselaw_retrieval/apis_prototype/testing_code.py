@@ -67,7 +67,7 @@ class input_test(unittest.TestCase):
         return attribute
 
     def test_input_query(self):
-        print(self.input_file)
+        # print(self.input_file)
         result, fail_safe = semantic_search(self.testing_path + self.input_file, return_fail_safe=True)
         with open(f"testing_data/expected/expected_{self.input_file}", "w") as output_file:
             output_file.write(result)
